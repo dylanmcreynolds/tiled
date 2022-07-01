@@ -115,7 +115,7 @@ def build_app(
     compression_registry = compression_registry or default_compression_registry
 
     app = FastAPI()
-
+    
     if SHARE_TILED_PATH:
         # If the distribution includes static assets, serve UI routes.
 
@@ -562,8 +562,9 @@ def build_app(
             response = await call_next(request)
             metrics.capture_request_metrics(request, response)
             return response
-
-    return app
+    real_app = FastAPI()
+    real_app.mount("/tiled", app)
+    return real_app
 
 
 def app_factory():
@@ -587,9 +588,9 @@ def app_factory():
     kwargs = construct_build_app_kwargs(parsed_config, source_filepath=config_path)
     web_app = build_app(**kwargs)
     uvicorn_config = parsed_config.get("uvicorn", {})
-    print_admin_api_key_if_generated(
-        web_app, host=uvicorn_config.get("host"), port=uvicorn_config.get("port")
-    )
+    # print_admin_api_key_if_generated(
+    #     web_app, host=uvicorn_config.get("host"), port=uvicorn_config.get("port")
+    # )
     return web_app
 
 
