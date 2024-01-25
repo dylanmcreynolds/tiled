@@ -1215,3 +1215,28 @@ async def delete_revision(
 
     await entry.delete_revision(number)
     return json_or_msgpack(request, None)
+
+
+@router.get("/zarr/{path:path}",
+            description="Serves zarr arrays, intended to be compatible with zarr fsspec's https access.",
+            summary="Get zarr arrays")
+async def get_zarr(
+    request: Request,
+    entry=SecureEntry(scopes=["read:data"]),
+    slice=Depends(slice_),
+    expected_shape=Depends(expected_shape),
+    format: Optional[str] = None,
+    filename: Optional[str] = None,
+    serialization_registry=Depends(get_serialization_registry),
+
+    settings: BaseSettings = Depends(get_settings),
+):
+    """
+    Fetch a slice of array-like data.
+    """
+    structure_family = entry.structure_family
+    if structure_family not in {StructureFamily.array}:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Cannot read {entry.structure_family} structure with /zarr route.",
+        )
